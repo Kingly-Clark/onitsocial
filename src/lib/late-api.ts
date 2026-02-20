@@ -2,7 +2,7 @@
 // Server-side only — never import this in client components.
 // All social media operations go through this client.
 
-const BASE_URL = process.env.LATE_API_BASE_URL || "https://api.getlate.dev/v1";
+const BASE_URL = process.env.LATE_API_BASE_URL || "https://getlate.dev/api/v1";
 const API_KEY = process.env.LATE_API_KEY || "";
 
 interface LateRequestOptions {
