@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { Brand, ConnectedAccount } from "@/types/database";
 
 const BRAND_COLORS = [
@@ -36,10 +35,10 @@ interface BrandSettings extends Brand {
 export default function BrandSettingsPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
   const router = useRouter();
-  const [id, setId] = useState<string | null>(null);
+  const { id } = params;
   const [brand, setBrand] = useState<BrandSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,13 +54,6 @@ export default function BrandSettingsPage({
   });
 
   useEffect(() => {
-    params.then(({ id }) => {
-      setId(id);
-    });
-  }, [params]);
-
-  useEffect(() => {
-    if (!id) return;
 
     const fetchBrand = async () => {
       try {
