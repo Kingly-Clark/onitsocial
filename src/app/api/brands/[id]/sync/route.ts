@@ -107,8 +107,9 @@ export async function POST(
       .single();
 
     if (updateError) {
+      console.error("Supabase update error:", updateError);
       return NextResponse.json(
-        { error: "Failed to update brand" },
+        { error: `Failed to update brand: ${updateError.message} (${updateError.code})` },
         { status: 500 }
       );
     }
