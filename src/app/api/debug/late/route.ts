@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   const apiKey = process.env.LATE_API_KEY;
   const baseUrl = process.env.LATE_API_BASE_URL || "https://getlate.dev/api/v1";
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
   // Check if API key exists
   if (!apiKey) {
@@ -10,12 +11,20 @@ export async function GET() {
       status: "error",
       message: "LATE_API_KEY is not set",
       baseUrl,
+      supabaseServiceRoleSet: !!serviceRoleKey,
     });
   }
   
-  // Test the API by listing profiles
+  const results: Record<string, unknown> = {
+    baseUrl,
+    apiKeySet: true,
+    apiKeyPrefix: apiKey.substring(0, 8) + "...",
+    supabaseServiceRoleSet: !!serviceRoleKey,
+  };
+  
+  // Test 1: List profiles (GET)
   try {
-    const res = await fetch(`${baseUrl}/profiles`, {
+    const listRes = await fetch(`${baseUrl}/profiles`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -23,34 +32,54 @@ export async function GET() {
       },
     });
     
-    const data = await res.json().catch(() => null);
+    const listData = await listRes.json().catch(() => null);
+    results.listProfiles = {
+      status: listRes.status,
+      ok: listRes.ok,
+      data: listData,
+    };
+  } catch (error) {
+    results.listProfiles = {
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+  
+  // Test 2: Create profile (POST) - to test write permission
+  try {
+    const createRes = await fetch(`${baseUrl}/profiles`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: "Test Profile Debug" }),
+    });
     
-    if (res.ok) {
-      return NextResponse.json({
-        status: "success",
-        message: "API connection successful",
-        baseUrl,
-        apiKeySet: true,
-        apiKeyPrefix: apiKey.substring(0, 8) + "...",
-        profileCount: Array.isArray(data?.data) ? data.data.length : "unknown",
+    const createData = await createRes.json().catch(() => null);
+    results.createProfile = {
+      status: createRes.status,
+      ok: createRes.ok,
+      data: createData,
+    };
+    
+    // If created successfully, delete it
+    if (createRes.ok && createData?.id) {
+      const deleteRes = await fetch(`${baseUrl}/profiles/${createData.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
       });
-    } else {
-      return NextResponse.json({
-        status: "error",
-        message: `API returned ${res.status}: ${res.statusText}`,
-        baseUrl,
-        apiKeySet: true,
-        apiKeyPrefix: apiKey.substring(0, 8) + "...",
-        response: data,
-      });
+      results.deleteProfile = {
+        status: deleteRes.status,
+        ok: deleteRes.ok,
+      };
     }
   } catch (error) {
-    return NextResponse.json({
-      status: "error",
-      message: error instanceof Error ? error.message : "Unknown error",
-      baseUrl,
-      apiKeySet: true,
-      apiKeyPrefix: apiKey.substring(0, 8) + "...",
-    });
+    results.createProfile = {
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
+  
+  return NextResponse.json(results);
 }
