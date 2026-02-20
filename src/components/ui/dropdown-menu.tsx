@@ -77,25 +77,44 @@ const DropdownMenuTrigger = React.forwardRef<
 DropdownMenuTrigger.displayName = "DropdownMenuTrigger";
 
 interface DropdownMenuContentProps
-  extends React.HTMLAttributes<HTMLDivElement> {}
+  extends React.HTMLAttributes<HTMLDivElement> {
+  align?: "start" | "center" | "end";
+}
 
 const DropdownMenuContent = React.forwardRef<
   HTMLDivElement,
   DropdownMenuContentProps
->(({ className, ...props }, ref) => {
+>(({ className, align = "start", ...props }, ref) => {
   const { open, setOpen, triggerRef } = useDropdownMenu();
-  const [position, setPosition] = React.useState({ top: 0, left: 0 });
+  const [position, setPosition] = React.useState({ top: 0, left: 0, right: "auto" as string | number });
   const contentRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (open && triggerRef.current) {
       const triggerRect = triggerRef.current.getBoundingClientRect();
-      setPosition({
-        top: triggerRect.bottom + 8,
-        left: triggerRect.left,
-      });
+      const viewportWidth = window.innerWidth;
+      
+      if (align === "end") {
+        setPosition({
+          top: triggerRect.bottom + 8,
+          left: "auto" as unknown as number,
+          right: viewportWidth - triggerRect.right,
+        });
+      } else if (align === "center") {
+        setPosition({
+          top: triggerRect.bottom + 8,
+          left: triggerRect.left + (triggerRect.width / 2),
+          right: "auto",
+        });
+      } else {
+        setPosition({
+          top: triggerRect.bottom + 8,
+          left: triggerRect.left,
+          right: "auto",
+        });
+      }
     }
-  }, [open, triggerRef]);
+  }, [open, triggerRef, align]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -135,7 +154,9 @@ const DropdownMenuContent = React.forwardRef<
       style={{
         position: "fixed",
         top: `${position.top}px`,
-        left: `${position.left}px`,
+        left: align === "end" ? "auto" : (align === "center" ? `${position.left}px` : `${position.left}px`),
+        right: align === "end" ? `${position.right}px` : "auto",
+        transform: align === "center" ? "translateX(-50%)" : undefined,
         zIndex: 50,
       }}
       className={cn(
