@@ -99,12 +99,11 @@ export async function POST(
     }
 
     // Update brand with late_profile_id
-    const { data: updatedBrand, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from("brands")
       .update({ late_profile_id: lateProfileId })
       .eq("id", id)
-      .select()
-      .single();
+      .eq("user_id", user.id);
 
     if (updateError) {
       console.error("Supabase update error:", updateError);
@@ -114,8 +113,16 @@ export async function POST(
       );
     }
 
+    // Fetch the updated brand
+    const { data: updatedBrand } = await supabase
+      .from("brands")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
     return NextResponse.json({
-      data: updatedBrand,
+      data: updatedBrand || { id, late_profile_id: lateProfileId },
       message: "Brand synced successfully",
       status: 200,
     });
