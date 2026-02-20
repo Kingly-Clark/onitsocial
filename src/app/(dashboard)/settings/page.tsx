@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useUserStore } from "@/store/user-store";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,14 +195,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-slate-500 dark:text-slate-400">Manage your account and preferences</p>
-      </div>
-
-      {/* Message Alert */}
+    <DashboardShell title="Settings" subtitle="Manage your account and preferences">
+      <div className="space-y-6 p-6">
+        {/* Message Alert */}
       {message && (
         <div
           className={`rounded-lg px-4 py-3 ${
@@ -537,6 +533,7 @@ export default function SettingsPage() {
         </TabsContent>
         </Tabs>
       </div>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }

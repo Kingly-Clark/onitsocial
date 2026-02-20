@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { subDays, format } from "date-fns";
 import { useBrandStore } from "@/store/brand-store";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { RefreshCw, AlertCircle } from "lucide-react";
@@ -161,36 +162,33 @@ export default function AnalyticsPage() {
 
   if (!activeBrandId) {
     return (
-      <div className="flex h-96 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800">
-        <p className="text-slate-500 dark:text-slate-400">
-          Please select a brand to view analytics
-        </p>
-      </div>
+      <DashboardShell title="Analytics" subtitle="Track your social media performance">
+        <div className="p-6">
+          <div className="flex h-96 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800">
+            <p className="text-slate-500 dark:text-slate-400">
+              Please select a brand to view analytics
+            </p>
+          </div>
+        </div>
+      </DashboardShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            Analytics
-          </h1>
-          <p className="mt-1 text-slate-600 dark:text-slate-400">
-            Track your social media performance
-          </p>
+    <DashboardShell title="Analytics" subtitle="Track your social media performance">
+      <div className="space-y-6 p-6">
+        {/* Sync Button */}
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSync}
+            disabled={syncing}
+            size="lg"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Sync Data"}
+          </Button>
         </div>
-        <Button
-          onClick={handleSync}
-          disabled={syncing}
-          size="lg"
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Syncing..." : "Sync Data"}
-        </Button>
-      </div>
 
       {/* Date Range Picker */}
       {dateFrom && dateTo && (
@@ -273,6 +271,7 @@ export default function AnalyticsPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </DashboardShell>
   );
 }

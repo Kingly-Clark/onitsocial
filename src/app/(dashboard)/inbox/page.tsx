@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useBrandStore } from "@/store/brand-store";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { MessageList } from "@/components/inbox/message-list";
 import { MessageDetail } from "@/components/inbox/message-detail";
 import { InboxToolbar } from "@/components/inbox/inbox-toolbar";
@@ -231,52 +232,57 @@ export default function InboxPage() {
   // If no brand is selected, show empty state
   if (!activeBrandId) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <Mail className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-          <p className="text-slate-500 dark:text-slate-400">
-            Select a brand to view messages
-          </p>
+      <DashboardShell title="Inbox" subtitle="Manage your messages" unreadCount={unreadCount}>
+        <div className="flex items-center justify-center h-full p-6">
+          <div className="text-center">
+            <Mail className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+            <p className="text-slate-500 dark:text-slate-400">
+              Select a brand to view messages
+            </p>
+          </div>
         </div>
-      </div>
+      </DashboardShell>
     );
   }
 
   // If no messages and not loading, show empty state
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="flex flex-col h-full">
-        <InboxToolbar
-          onSearch={setSearchQuery}
-          onFilterPlatform={setActivePlatformFilter}
-          onFilterReadStatus={setActiveReadFilter}
-          onFilterResolved={setActiveResolvedFilter}
-          onSync={handleSync}
-          unreadCount={unreadCount}
-          isSyncing={isSyncing}
-          searchQuery={searchQuery}
-          activePlatformFilter={activePlatformFilter}
-          activeReadFilter={activeReadFilter}
-          activeResolvedFilter={activeResolvedFilter}
-        />
+      <DashboardShell title="Inbox" subtitle="Manage your messages" unreadCount={unreadCount}>
+        <div className="flex flex-col h-full">
+          <InboxToolbar
+            onSearch={setSearchQuery}
+            onFilterPlatform={setActivePlatformFilter}
+            onFilterReadStatus={setActiveReadFilter}
+            onFilterResolved={setActiveResolvedFilter}
+            onSync={handleSync}
+            unreadCount={unreadCount}
+            isSyncing={isSyncing}
+            searchQuery={searchQuery}
+            activePlatformFilter={activePlatformFilter}
+            activeReadFilter={activeReadFilter}
+            activeResolvedFilter={activeResolvedFilter}
+          />
 
-        <div className="flex items-center justify-center flex-1">
-          <div className="text-center">
-            <Mail className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-            <p className="text-slate-500 dark:text-slate-400 text-sm">
-              No messages yet
-            </p>
-            <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
-              Connect your social accounts to start receiving messages
-            </p>
+          <div className="flex items-center justify-center flex-1">
+            <div className="text-center">
+              <Mail className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                No messages yet
+              </p>
+              <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
+                Connect your social accounts to start receiving messages
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </DashboardShell>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <DashboardShell title="Inbox" subtitle="Manage your messages" unreadCount={unreadCount}>
+      <div className="flex flex-col h-full">
       {/* Toolbar */}
       <InboxToolbar
         onSearch={setSearchQuery}
@@ -349,6 +355,7 @@ export default function InboxPage() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }

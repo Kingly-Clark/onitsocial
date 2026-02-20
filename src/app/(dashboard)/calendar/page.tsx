@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, Grid3x3, List } from "lucide-react";
+import { AlertCircle, Grid3x3, List, Loader2 } from "lucide-react";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { CalendarDayDetail } from "@/components/calendar/calendar-day-detail";
 import { PostList } from "@/components/posts/post-list";
 import { useBrandStore } from "@/store/brand-store";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import type { Post } from "@/types/database";
 
 export default function CalendarPage() {
@@ -69,39 +69,30 @@ export default function CalendarPage() {
 
   if (!activeBrandId) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-4">
-          <AlertCircle className="h-12 w-12 mx-auto text-amber-600 dark:text-amber-400" />
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-            No Brand Selected
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Please select a brand to view its calendar
-          </p>
+      <DashboardShell title="Calendar" subtitle="Manage your content schedule">
+        <div className="flex items-center justify-center min-h-[60vh] p-6">
+          <div className="text-center space-y-4">
+            <AlertCircle className="h-12 w-12 mx-auto text-amber-600 dark:text-amber-400" />
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+              No Brand Selected
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Please select a brand to view its calendar
+            </p>
+          </div>
         </div>
-      </div>
+      </DashboardShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Title */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">
-            Content Calendar
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            {activeBrand?.name && (
-              <>
-                Manage your content schedule for <span className="font-semibold">{activeBrand.name}</span>
-              </>
-            )}
-          </p>
-        </div>
-
+    <DashboardShell 
+      title="Calendar" 
+      subtitle={activeBrand?.name ? `Content schedule for ${activeBrand.name}` : "Manage your content schedule"}
+    >
+      <div className="space-y-6 p-6">
         {/* View Toggle */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <Button
             onClick={() => setView("calendar")}
             variant={view === "calendar" ? "default" : "outline"}
@@ -121,7 +112,6 @@ export default function CalendarPage() {
             List
           </Button>
         </div>
-      </div>
 
       {/* Loading State */}
       {loading && (
@@ -185,6 +175,7 @@ export default function CalendarPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </DashboardShell>
   );
 }
