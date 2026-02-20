@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   } = await supabase.auth.getSession();
 
   if (!session) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   // Fetch user data
@@ -26,7 +26,7 @@ export default async function DashboardLayout({
     .single();
 
   if (userError || !userData) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
   // Fetch brands for this user
