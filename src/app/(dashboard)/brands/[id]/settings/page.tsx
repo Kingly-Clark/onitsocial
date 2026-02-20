@@ -170,8 +170,14 @@ export default function BrandSettingsPage({
         throw new Error(data.error || "Failed to sync brand");
       }
 
-      const data = await response.json();
-      setBrand(data.data);
+      // Refresh brand data from API to get updated late_profile_id
+      const brandResponse = await fetch(`/api/brands/${id}`);
+      if (brandResponse.ok) {
+        const brandData = await brandResponse.json();
+        setBrand(brandData.data);
+        setConnectedAccounts(brandData.data.connected_accounts || []);
+      }
+      
       setSuccess("Brand synced successfully! You can now connect platforms.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sync brand");
