@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, RefreshCw, CheckCircle } from "lucide-react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ConnectPlatform } from "@/components/brands/connect-platform";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ export default function BrandSettingsPage({
   const [brand, setBrand] = useState<BrandSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -147,7 +148,35 @@ export default function BrandSettingsPage({
     const response = await fetch(`/api/brands/${id}`);
     if (response.ok) {
       const data = await response.json();
+      setBrand(data.data);
       setConnectedAccounts(data.data.connected_accounts || []);
+    }
+  };
+
+  const handleSync = async () => {
+    if (!id) return;
+    
+    setError("");
+    setSuccess("");
+    setSyncing(true);
+
+    try {
+      const response = await fetch(`/api/brands/${id}/sync`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to sync brand");
+      }
+
+      const data = await response.json();
+      setBrand(data.data);
+      setSuccess("Brand synced successfully! You can now connect platforms.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sync brand");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -275,16 +304,52 @@ export default function BrandSettingsPage({
           <CardHeader>
             <CardTitle>Connected Platforms</CardTitle>
             <CardDescription>
-              {connectedAccounts.length} of 6 platforms connected
+              {brand.late_profile_id 
+                ? `${connectedAccounts.length} of 6 platforms connected`
+                : "Sync your brand to connect platforms"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ConnectPlatform
-              brandId={brand.id}
-              connectedAccounts={connectedAccounts}
-              onConnect={handleRefreshAccounts}
-              onDisconnect={handleRefreshAccounts}
-            />
+            {!brand.late_profile_id ? (
+              <div className="rounded-lg border-2 border-dashed border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950 p-6">
+                <div className="flex flex-col items-center text-center gap-4">
+                  <AlertCircle className="h-10 w-10 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <p className="font-medium text-amber-800 dark:text-amber-200">
+                      Brand Not Synced
+                    </p>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      Your brand needs to be synced with the platform before you can connect social accounts.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleSync} 
+                    disabled={syncing}
+                    className="gap-2"
+                  >
+                    {syncing ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        Sync Brand Now
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <ConnectPlatform
+                brandId={brand.id}
+                connectedAccounts={connectedAccounts}
+                onConnect={handleRefreshAccounts}
+                onDisconnect={handleRefreshAccounts}
+              />
+            )}
           </CardContent>
         </Card>
 
