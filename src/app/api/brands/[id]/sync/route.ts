@@ -63,16 +63,33 @@ export async function POST(
       
       // Get more detailed error info
       let errorMessage = "Failed to sync with platform.";
-      if (lateError && typeof lateError === "object" && "statusCode" in lateError) {
-        const apiError = lateError as { statusCode: number; message: string; responseBody?: unknown };
-        if (apiError.statusCode === 401) {
-          errorMessage = "Invalid API key. Please check your LATE_API_KEY in Vercel.";
-        } else if (apiError.statusCode === 403) {
-          errorMessage = "API key doesn't have permission. Check your getLate account.";
-        } else {
-          errorMessage = `Platform error (${apiError.statusCode}): ${apiError.message}`;
+      
+      if (lateError && typeof lateError === "object") {
+        const err = lateError as Record<string, unknown>;
+        
+        if ("statusCode" in err) {
+          const statusCode = err.statusCode as number;
+          const responseBody = err.responseBody;
+          
+          console.error("Late API response body:", JSON.stringify(responseBody, null, 2));
+          
+          if (statusCode === 401) {
+            errorMessage = "Invalid API key. Please check your LATE_API_KEY in Vercel.";
+          } else if (statusCode === 403) {
+            errorMessage = "API key doesn't have permission. Check your getLate account.";
+          } else if (statusCode === 404) {
+            errorMessage = "API endpoint not found. The getLate API may have changed.";
+          } else if (responseBody && typeof responseBody === "object") {
+            const body = responseBody as Record<string, unknown>;
+            errorMessage = `Platform error (${statusCode}): ${body.message || body.error || JSON.stringify(body)}`;
+          } else {
+            errorMessage = `Platform error (${statusCode})`;
+          }
+        } else if ("message" in err) {
+          errorMessage = `Error: ${err.message}`;
         }
-        console.error("Late API response:", apiError.responseBody);
+      } else if (lateError instanceof Error) {
+        errorMessage = `Error: ${lateError.message}`;
       }
       
       return NextResponse.json(
