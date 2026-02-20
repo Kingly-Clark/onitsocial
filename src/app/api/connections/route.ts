@@ -60,10 +60,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the callback URL
+    // Get the callback URL - points to our page selector UI
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const callbackUrl = `${baseUrl}/api/connections/callback`;
+    const callbackUrl = `${baseUrl}/connections/callback`;
 
     // Get connect URL from getlate.dev
     let lateResponse;
