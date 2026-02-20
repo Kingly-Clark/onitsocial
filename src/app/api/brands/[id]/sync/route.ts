@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { createProfile } from "@/lib/late-api";
 
 export async function POST(
@@ -98,8 +98,9 @@ export async function POST(
       );
     }
 
-    // Update brand with late_profile_id
-    const { error: updateError } = await supabase
+    // Update brand with late_profile_id using service role (bypasses RLS)
+    const serviceClient = await createServiceRoleClient();
+    const { error: updateError } = await serviceClient
       .from("brands")
       .update({ late_profile_id: lateProfileId })
       .eq("id", id)
@@ -114,11 +115,10 @@ export async function POST(
     }
 
     // Fetch the updated brand
-    const { data: updatedBrand } = await supabase
+    const { data: updatedBrand } = await serviceClient
       .from("brands")
       .select("*")
       .eq("id", id)
-      .eq("user_id", user.id)
       .single();
 
     return NextResponse.json({
