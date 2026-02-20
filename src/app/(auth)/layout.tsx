@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+export const dynamic = "force-dynamic";
+
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-blue-50 px-4 py-12">
