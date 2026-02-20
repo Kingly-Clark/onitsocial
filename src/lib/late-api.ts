@@ -61,10 +61,14 @@ async function lateRequest<T = unknown>(
 // ─── Profiles (Social Sets = Brands) ────────────────────────────────────────
 
 export async function createProfile(name: string) {
-  return lateRequest<{ id: string }>("/profiles", {
+  const response = await lateRequest<{ 
+    message: string; 
+    profile: { _id: string; name: string } 
+  }>("/profiles", {
     method: "POST",
     body: { name },
   });
+  return { id: response.profile._id, name: response.profile.name };
 }
 
 export async function deleteProfile(profileId: string) {
