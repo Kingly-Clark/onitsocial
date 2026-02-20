@@ -78,9 +78,16 @@ export async function deleteProfile(profileId: string) {
 // ─── Connections (OAuth) ────────────────────────────────────────────────────
 
 export async function getConnectUrl(platform: string, profileId: string, callbackUrl: string) {
-  return lateRequest<{ url: string }>(`/connect/${platform}`, {
+  const response = await lateRequest<{ url?: string; connectUrl?: string; authUrl?: string }>(`/connect/${platform}`, {
     params: { profileId, callbackUrl },
   });
+  // Handle different possible response formats
+  const url = response.url || response.connectUrl || response.authUrl;
+  if (!url) {
+    console.error("Unexpected getLate connect response:", response);
+    throw new Error("No connect URL in response");
+  }
+  return { url };
 }
 
 // ─── Accounts ───────────────────────────────────────────────────────────────

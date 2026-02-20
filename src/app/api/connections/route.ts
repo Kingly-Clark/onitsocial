@@ -66,11 +66,32 @@ export async function POST(request: NextRequest) {
     const callbackUrl = `${baseUrl}/api/connections/callback`;
 
     // Get connect URL from getlate.dev
-    const lateResponse = await getConnectUrl(
-      platform,
-      brand.late_profile_id,
-      callbackUrl
-    );
+    let lateResponse;
+    try {
+      lateResponse = await getConnectUrl(
+        platform,
+        brand.late_profile_id,
+        callbackUrl
+      );
+    } catch (lateError: unknown) {
+      console.error("getLate connect error:", lateError);
+      let errorMessage = "Failed to get connect URL from platform";
+      
+      if (lateError && typeof lateError === "object") {
+        const err = lateError as Record<string, unknown>;
+        if ("statusCode" in err) {
+          const responseBody = err.responseBody as Record<string, unknown> | undefined;
+          errorMessage = `Platform error (${err.statusCode}): ${responseBody?.message || responseBody?.error || JSON.stringify(responseBody)}`;
+        } else if ("message" in err) {
+          errorMessage = String(err.message);
+        }
+      }
+      
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       data: {
@@ -81,7 +102,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("POST /api/connections error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }
