@@ -45,15 +45,38 @@ export async function POST(
       });
     }
 
+    // Check if API key is configured
+    if (!process.env.LATE_API_KEY) {
+      return NextResponse.json(
+        { error: "LATE_API_KEY environment variable is not configured in Vercel." },
+        { status: 500 }
+      );
+    }
+
     // Create profile on getLate
     let lateProfileId: string;
     try {
       const lateProfile = await createProfile(brand.name);
       lateProfileId = lateProfile.id;
-    } catch (lateError) {
+    } catch (lateError: unknown) {
       console.error("Failed to create Late profile:", lateError);
+      
+      // Get more detailed error info
+      let errorMessage = "Failed to sync with platform.";
+      if (lateError && typeof lateError === "object" && "statusCode" in lateError) {
+        const apiError = lateError as { statusCode: number; message: string; responseBody?: unknown };
+        if (apiError.statusCode === 401) {
+          errorMessage = "Invalid API key. Please check your LATE_API_KEY in Vercel.";
+        } else if (apiError.statusCode === 403) {
+          errorMessage = "API key doesn't have permission. Check your getLate account.";
+        } else {
+          errorMessage = `Platform error (${apiError.statusCode}): ${apiError.message}`;
+        }
+        console.error("Late API response:", apiError.responseBody);
+      }
+      
       return NextResponse.json(
-        { error: "Failed to sync with platform. Please check your API key." },
+        { error: errorMessage },
         { status: 500 }
       );
     }
