@@ -72,16 +72,11 @@ export default function ConnectionCallbackPage() {
       const params = new URLSearchParams({
         profileId: data.profileId,
         tempToken: data.tempToken,
+        connectToken: data.connectToken,
       });
       
-      const response = await fetch(
-        `https://getlate.dev/api/v1/connect/facebook/select-page?${params}`,
-        {
-          headers: {
-            "X-Connect-Token": data.connectToken,
-          },
-        }
-      );
+      // Use our API proxy to avoid CORS issues
+      const response = await fetch(`/api/connections/facebook-pages?${params}`);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -112,22 +107,20 @@ export default function ConnectionCallbackPage() {
     setError(null);
 
     try {
-      const response = await fetch(
-        "https://getlate.dev/api/v1/connect/facebook/select-page",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Connect-Token": oauthData.connectToken,
-          },
-          body: JSON.stringify({
-            profileId: oauthData.profileId,
-            pageId,
-            tempToken: oauthData.tempToken,
-            userProfile: oauthData.userProfile,
-          }),
-        }
-      );
+      // Use our API proxy to avoid CORS issues
+      const response = await fetch("/api/connections/facebook-pages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          profileId: oauthData.profileId,
+          pageId,
+          tempToken: oauthData.tempToken,
+          userProfile: oauthData.userProfile,
+          connectToken: oauthData.connectToken,
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
