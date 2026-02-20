@@ -246,34 +246,33 @@ export function PostComposer({ onSuccess }: PostComposerProps) {
           <label className="text-sm font-medium text-slate-900 dark:text-slate-50">
             Select Platforms
           </label>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6">
-            {PLATFORMS.map((platform) => {
-              const isConnected = connectedPlatforms.includes(platform.id);
-              const isSelected = selectedPlatforms.includes(platform.id);
+          {connectedPlatforms.length === 0 ? (
+            <div className="rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 p-6 text-center">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                No connected platforms. Go to brand settings to connect your social accounts.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {PLATFORMS.filter((platform) => connectedPlatforms.includes(platform.id)).map((platform) => {
+                const isSelected = selectedPlatforms.includes(platform.id);
 
-              return (
-                <button
-                  key={platform.id}
-                  onClick={() => isConnected && togglePlatform(platform.id)}
-                  disabled={!isConnected}
-                  className={cn(
-                    "relative flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all",
-                    isSelected
-                      ? "border-slate-900 dark:border-slate-50 bg-slate-50 dark:bg-slate-900"
-                      : "border-slate-200 dark:border-slate-800",
-                    !isConnected && "opacity-50 cursor-not-allowed"
-                  )}
-                  title={!isConnected ? "Not connected" : ""}
-                >
-                  <span className="text-xs font-medium text-center">{platform.label}</span>
-                </button>
-              );
-            })}
-          </div>
-          {connectedPlatforms.length === 0 && (
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              No connected platforms. Go to brand settings to connect.
-            </p>
+                return (
+                  <button
+                    key={platform.id}
+                    onClick={() => togglePlatform(platform.id)}
+                    className={cn(
+                      "flex items-center justify-center gap-2 rounded-lg border-2 px-4 py-2.5 transition-all",
+                      isSelected
+                        ? "border-brand-500 bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300"
+                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    )}
+                  >
+                    <span className="text-sm font-medium">{platform.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 

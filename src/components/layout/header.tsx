@@ -65,7 +65,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                 <AvatarFallback>{userInitials}</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48">
+            <DropdownMenuContent align="end" className="w-48">
               <div className="px-2 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                 {user?.full_name || user?.email}
               </div>
