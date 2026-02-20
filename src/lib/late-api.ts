@@ -77,9 +77,13 @@ export async function deleteProfile(profileId: string) {
 
 // ─── Connections (OAuth) ────────────────────────────────────────────────────
 
-export async function getConnectUrl(platform: string, profileId: string, callbackUrl: string) {
+export async function getConnectUrl(platform: string, profileId: string, redirectUrl: string) {
   const response = await lateRequest<{ url?: string; connectUrl?: string; authUrl?: string }>(`/connect/${platform}`, {
-    params: { profileId, callbackUrl },
+    params: { 
+      profileId, 
+      redirect_url: redirectUrl,
+      headless: "true"  // This makes getLate redirect back to our app instead of showing their dashboard
+    },
   });
   // Handle different possible response formats
   const url = response.url || response.connectUrl || response.authUrl;
