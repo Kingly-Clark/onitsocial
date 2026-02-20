@@ -1,4 +1,4 @@
-// File: /sessions/peaceful-lucid-gates/mnt/outputs/onit/src/app/(dashboard)/layout.tsx
+// File: /Users/tezferguson/gitProjects/onitsocial/src/app/(dashboard)/layout.tsx
 import * as entry from '../../../../src/app/(dashboard)/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
