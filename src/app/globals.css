@@ -50,6 +50,9 @@
   body {
     @apply bg-white text-foreground antialiased dark:bg-slate-950;
   }
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 /* Scrollbar */
