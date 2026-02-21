@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader, AlertCircle, CheckCircle } from "lucide-react";
 
-interface FacebookPage {
+interface SelectionItem {
   id: string;
   name: string;
   username?: string;
   category?: string;
+  type?: string;
 }
 
 interface OAuthData {
@@ -22,6 +23,9 @@ interface OAuthData {
   platform: string;
 }
 
+// Platforms that require selection step
+const PLATFORMS_WITH_SELECTION = ["facebook", "linkedin", "googlebusiness", "pinterest"];
+
 export default function ConnectionCallbackPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -30,12 +34,12 @@ export default function ConnectionCallbackPage() {
   const [selecting, setSelecting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [pages, setPages] = useState<FacebookPage[]>([]);
+  const [items, setItems] = useState<SelectionItem[]>([]);
   const [oauthData, setOauthData] = useState<OAuthData | null>(null);
 
   useEffect(() => {
     const step = searchParams.get("step");
-    const platform = searchParams.get("platform");
+    const platform = searchParams.get("platform")?.toLowerCase();
     
     // Parse OAuth data from URL
     const profileId = searchParams.get("profileId");
@@ -58,93 +62,102 @@ export default function ConnectionCallbackPage() {
     };
     setOauthData(data);
 
-    // If step is select_page, fetch available pages
-    if (step === "select_page" && platform === "facebook") {
-      fetchFacebookPages(data);
+    // Check if this platform needs a selection step
+    const needsSelection = step === "select_page" || 
+                          step === "select_organization" || 
+                          step === "select_location" ||
+                          step === "select_board";
+    
+    if (needsSelection && PLATFORMS_WITH_SELECTION.includes(platform)) {
+      fetchSelectionItems(data);
     } else {
-      // For other platforms or steps, try to complete directly
+      // For other platforms, try to complete directly
       completeConnection(data);
     }
   }, [searchParams]);
 
-  async function fetchFacebookPages(data: OAuthData) {
+  async function fetchSelectionItems(data: OAuthData) {
     try {
       const params = new URLSearchParams({
         profileId: data.profileId,
         tempToken: data.tempToken,
         connectToken: data.connectToken,
+        platform: data.platform,
       });
       
       // Use our API proxy to avoid CORS issues
-      const response = await fetch(`/api/connections/facebook-pages?${params}`);
+      const response = await fetch(`/api/connections/select-items?${params}`);
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch Facebook pages");
+        throw new Error(errorData.error || `Failed to fetch ${data.platform} items`);
       }
 
       const result = await response.json();
+      const itemsList = result.pages || result.organizations || result.locations || result.boards || [];
       
-      if (!result.pages || result.pages.length === 0) {
-        setError("No Facebook pages found. You need to be an admin of at least one Facebook page.");
+      if (itemsList.length === 0) {
+        const platformName = data.platform.charAt(0).toUpperCase() + data.platform.slice(1);
+        setError(`No ${platformName} accounts found. Make sure you have admin access.`);
         setLoading(false);
         return;
       }
 
-      setPages(result.pages);
+      setItems(itemsList);
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching pages:", err);
-      setError(err instanceof Error ? err.message : "Failed to load Facebook pages");
+      console.error("Error fetching items:", err);
+      setError(err instanceof Error ? err.message : "Failed to load accounts");
       setLoading(false);
     }
   }
 
-  async function handleSelectPage(pageId: string) {
+  async function handleSelectItem(itemId: string) {
     if (!oauthData) return;
     
-    setSelecting(pageId);
+    setSelecting(itemId);
     setError(null);
 
     try {
       // Use our API proxy to avoid CORS issues
-      const response = await fetch("/api/connections/facebook-pages", {
+      const response = await fetch("/api/connections/select-items", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           profileId: oauthData.profileId,
-          pageId,
+          itemId,
           tempToken: oauthData.tempToken,
           userProfile: oauthData.userProfile,
           connectToken: oauthData.connectToken,
+          platform: oauthData.platform,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to connect page");
+        throw new Error(errorData.error || "Failed to connect account");
       }
 
       // Save connection to our database
-      await saveConnectionToDatabase(oauthData.profileId, "facebook");
+      await saveConnectionToDatabase(oauthData.profileId, oauthData.platform);
       
       setSuccess(true);
       
       // Close popup and notify parent window
       if (window.opener) {
-        window.opener.postMessage({ type: "CONNECTION_SUCCESS", platform: "facebook" }, "*");
+        window.opener.postMessage({ type: "CONNECTION_SUCCESS", platform: oauthData.platform }, "*");
         setTimeout(() => window.close(), 1500);
       } else {
         // Not in popup, redirect normally
         setTimeout(() => {
-          router.push(`/brands?connected=facebook`);
+          router.push(`/brands?connected=${oauthData.platform}`);
         }, 2000);
       }
     } catch (err) {
-      console.error("Error selecting page:", err);
-      setError(err instanceof Error ? err.message : "Failed to connect Facebook page");
+      console.error("Error selecting item:", err);
+      setError(err instanceof Error ? err.message : "Failed to connect account");
       setSelecting(null);
     }
   }
@@ -202,7 +215,7 @@ export default function ConnectionCallbackPage() {
     );
   }
 
-  if (error && pages.length === 0) {
+  if (error && items.length === 0) {
     return (
       <DashboardShell title="Connection Error">
         <div className="max-w-md mx-auto mt-12 p-6">
@@ -216,9 +229,15 @@ export default function ConnectionCallbackPage() {
                   <Button
                     variant="outline"
                     className="mt-4"
-                    onClick={() => router.push("/brands")}
+                    onClick={() => {
+                      if (window.opener) {
+                        window.close();
+                      } else {
+                        router.push("/connections");
+                      }
+                    }}
                   >
-                    Back to Brands
+                    {window.opener ? "Close" : "Back to Connections"}
                   </Button>
                 </div>
               </div>
@@ -229,14 +248,23 @@ export default function ConnectionCallbackPage() {
     );
   }
 
+  const platformName = oauthData?.platform 
+    ? oauthData.platform.charAt(0).toUpperCase() + oauthData.platform.slice(1) 
+    : "Account";
+  
+  const selectionLabel = oauthData?.platform === "linkedin" ? "Organization" 
+    : oauthData?.platform === "googlebusiness" ? "Location"
+    : oauthData?.platform === "pinterest" ? "Board"
+    : "Page";
+
   return (
-    <DashboardShell title="Connect Facebook Page">
+    <DashboardShell title={`Connect ${platformName}`}>
       <div className="max-w-2xl mx-auto p-6">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle>Select a Facebook Page</CardTitle>
+            <CardTitle>Select a {platformName} {selectionLabel}</CardTitle>
             <CardDescription>
-              Choose which Facebook page you want to connect for posting
+              Choose which {selectionLabel.toLowerCase()} you want to connect for posting
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -247,30 +275,30 @@ export default function ConnectionCallbackPage() {
             )}
             
             <div className="grid gap-3">
-              {pages.map((page) => (
+              {items.map((item) => (
                 <button
-                  key={page.id}
-                  onClick={() => handleSelectPage(page.id)}
+                  key={item.id}
+                  onClick={() => handleSelectItem(item.id)}
                   disabled={selecting !== null}
                   className="p-4 border-2 border-slate-200 dark:border-slate-700 rounded-lg hover:border-brand-500 hover:shadow-md transition-all text-left disabled:opacity-50"
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold text-slate-900 dark:text-slate-50">
-                        {page.name}
+                        {item.name}
                       </h3>
-                      {page.username && (
+                      {item.username && (
                         <p className="text-sm text-brand-600 dark:text-brand-400">
-                          @{page.username}
+                          @{item.username}
                         </p>
                       )}
-                      {page.category && (
+                      {(item.category || item.type) && (
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          {page.category}
+                          {item.category || item.type}
                         </p>
                       )}
                     </div>
-                    {selecting === page.id && (
+                    {selecting === item.id && (
                       <Loader className="h-5 w-5 animate-spin text-brand-500" />
                     )}
                   </div>
