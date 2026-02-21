@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const apiKey = process.env.LATE_API_KEY;
   const baseUrl = process.env.LATE_API_BASE_URL || "https://getlate.dev/api/v1";
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  // Check for profileId query param to list accounts
+  const profileId = request.nextUrl.searchParams.get("profileId");
   
   // Check if API key exists
   if (!apiKey) {
@@ -38,45 +41,28 @@ export async function GET() {
       ok: listRes.ok,
       data: listData,
     };
-  } catch (error) {
-    results.listProfiles = {
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-  
-  // Test 2: Create profile (POST) - to test write permission
-  try {
-    const createRes = await fetch(`${baseUrl}/profiles`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name: "Test Profile Debug" }),
-    });
     
-    const createData = await createRes.json().catch(() => null);
-    results.createProfile = {
-      status: createRes.status,
-      ok: createRes.ok,
-      data: createData,
-    };
-    
-    // If created successfully, delete it
-    if (createRes.ok && createData?.id) {
-      const deleteRes = await fetch(`${baseUrl}/profiles/${createData.id}`, {
-        method: "DELETE",
+    // If profileId provided, or use first profile, list accounts
+    const targetProfileId = profileId || listData?.profiles?.[0]?._id;
+    if (targetProfileId) {
+      const accountsRes = await fetch(`${baseUrl}/accounts?profileId=${targetProfileId}`, {
+        method: "GET",
         headers: {
           Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
         },
       });
-      results.deleteProfile = {
-        status: deleteRes.status,
-        ok: deleteRes.ok,
+      
+      const accountsData = await accountsRes.json().catch(() => null);
+      results.listAccounts = {
+        profileId: targetProfileId,
+        status: accountsRes.status,
+        ok: accountsRes.ok,
+        data: accountsData,
       };
     }
   } catch (error) {
-    results.createProfile = {
+    results.listProfiles = {
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
