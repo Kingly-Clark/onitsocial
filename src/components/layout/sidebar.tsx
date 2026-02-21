@@ -10,6 +10,7 @@ import {
   Inbox,
   BarChart3,
   Settings,
+  Link2,
   ChevronDown,
   Menu,
   X,
@@ -54,6 +55,7 @@ export function Sidebar({ unreadCount = 0 }: SidebarProps) {
     { href: "/calendar", icon: Calendar, label: "Calendar" },
     { href: "/inbox", icon: Inbox, label: "Inbox", badge: unreadCount },
     { href: "/analytics", icon: BarChart3, label: "Analytics" },
+    { href: "/connections", icon: Link2, label: "Connections" },
     { href: "/settings", icon: Settings, label: "Settings" },
   ];
 

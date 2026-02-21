@@ -888,6 +888,9 @@ input:where([type='file']):focus {
 .mt-12 {
   margin-top: 3rem;
 }
+.mr-2 {
+  margin-right: 0.5rem;
+}
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
@@ -2781,6 +2784,10 @@ input:where([type='file']):focus {
 :is(:where(.dark) .dark\:bg-yellow-900) {
   --tw-bg-opacity: 1;
   background-color: rgb(113 63 18 / var(--tw-bg-opacity));
+}
+
+:is(:where(.dark) .dark\:bg-green-950\/30) {
+  background-color: rgb(5 46 22 / 0.3);
 }
 
 :is(:where(.dark) .dark\:from-slate-900) {
