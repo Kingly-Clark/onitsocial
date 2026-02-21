@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import {
   motion,
+  useScroll,
+  useTransform,
+  useMotionValueEvent,
   AnimatePresence,
-  useInView,
 } from "framer-motion";
 import {
   PenLine,
@@ -68,10 +70,10 @@ function MockupPanel({ agent }: { agent: (typeof agents)[number] }) {
   return (
     <motion.div
       key={agent.id}
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
       className="w-full rounded-2xl border border-slate-200 bg-white shadow-xl overflow-hidden"
     >
       <div
@@ -93,10 +95,10 @@ function MockupPanel({ agent }: { agent: (typeof agents)[number] }) {
       <div className="p-6 space-y-3">
         {agent.mockup.items.map((item, i) => (
           <motion.div
-            key={i}
+            key={`${agent.id}-${i}`}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.08, duration: 0.25 }}
+            transition={{ delay: i * 0.07, duration: 0.25 }}
             className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100"
           >
             <div className="flex items-center gap-3">
@@ -131,111 +133,144 @@ function MockupPanel({ agent }: { agent: (typeof agents)[number] }) {
 
 export function AgentShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const sectionRef = useRef(null);
-  const isInView = useInView(sectionRef, { once: false, amount: 0.3 });
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isInView || !isAutoPlaying) return;
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
 
-    intervalRef.current = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % agents.length);
-    }, 3500);
+  const sectionOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.05, 0.92, 1],
+    [0, 1, 1, 0]
+  );
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isInView, isAutoPlaying]);
-
-  const handleCardClick = (index: number) => {
-    setActiveIndex(index);
-    setIsAutoPlaying(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  };
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    const segment = 1 / agents.length;
+    const newIndex = Math.min(
+      Math.floor(latest / segment),
+      agents.length - 1
+    );
+    if (newIndex !== activeIndex && newIndex >= 0) {
+      setActiveIndex(newIndex);
+    }
+  });
 
   const activeAgent = agents[activeIndex];
 
   return (
     <section
-      ref={sectionRef}
-      className="relative w-full py-20 sm:py-28 bg-slate-50/50"
+      ref={containerRef}
+      className="relative bg-slate-50/50"
+      style={{ height: `${(agents.length + 1) * 100}vh` }}
     >
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="sticky top-0 h-screen flex items-center overflow-hidden">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-14"
+          style={{ opacity: sectionOpacity }}
+          className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-12"
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
-            AI agents that work for you
-          </h2>
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-            Three specialized agents handle every aspect of your social media
-          </p>
-        </motion.div>
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
+              AI agents that work for you
+            </h2>
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto">
+              Scroll to see how three specialized agents handle your social media
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          {agents.map((agent, index) => {
-            const Icon = agent.icon;
-            const isActive = index === activeIndex;
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {agents.map((agent, index) => {
+              const Icon = agent.icon;
+              const isActive = index === activeIndex;
 
-            return (
-              <motion.button
-                key={agent.id}
-                onClick={() => handleCardClick(index)}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.4 }}
-                className={`relative text-left p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer ${
-                  isActive
-                    ? "border-blue-600 bg-white shadow-lg shadow-blue-600/10"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-md"
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center"
-                    style={{
-                      backgroundColor: `${agent.color}15`,
-                    }}
-                  >
-                    <Icon
-                      className="w-4.5 h-4.5"
-                      style={{ color: agent.color }}
-                    />
-                  </div>
-                  <h3 className="font-semibold text-slate-900 text-sm">
-                    {agent.label}
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-500 pl-12">{agent.action}</p>
-
-                {isActive && (
-                  <motion.div
-                    layoutId="activeIndicator"
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  >
-                    <div className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1.5 rounded-full shadow-lg">
-                      <MousePointer2 className="w-3 h-3" />
-                      <span className="text-xs font-medium">
-                        {agent.label}
-                      </span>
+              return (
+                <div
+                  key={agent.id}
+                  className={`relative text-left p-5 rounded-xl border-2 transition-all duration-500 ${
+                    isActive
+                      ? "border-blue-600 bg-white shadow-lg shadow-blue-600/10 scale-[1.02]"
+                      : "border-slate-200 bg-white/70 opacity-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors duration-500"
+                      style={{
+                        backgroundColor: isActive
+                          ? `${agent.color}15`
+                          : "#f1f5f9",
+                      }}
+                    >
+                      <Icon
+                        className="w-4 h-4"
+                        style={{
+                          color: isActive ? agent.color : "#94a3b8",
+                        }}
+                      />
                     </div>
-                  </motion.div>
-                )}
-              </motion.button>
-            );
-          })}
-        </div>
+                    <h3
+                      className={`font-semibold text-sm transition-colors duration-500 ${
+                        isActive ? "text-slate-900" : "text-slate-400"
+                      }`}
+                    >
+                      {agent.label}
+                    </h3>
+                  </div>
+                  <p
+                    className={`text-xs pl-12 transition-colors duration-500 ${
+                      isActive ? "text-slate-500" : "text-slate-300"
+                    }`}
+                  >
+                    {agent.action}
+                  </p>
 
-        <AnimatePresence mode="wait">
-          <MockupPanel agent={activeAgent} />
-        </AnimatePresence>
+                  <AnimatePresence>
+                    {isActive && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: 4 }}
+                        transition={{
+                          type: "spring" as const,
+                          stiffness: 400,
+                          damping: 25,
+                        }}
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full z-10"
+                      >
+                        <div className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1.5 rounded-full shadow-lg mt-2">
+                          <MousePointer2 className="w-3 h-3" />
+                          <span className="text-xs font-medium whitespace-nowrap">
+                            {agent.label}
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-10">
+            <AnimatePresence mode="wait">
+              <MockupPanel agent={activeAgent} />
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </div>
+
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
+        {agents.map((_, i) => (
+          <div
+            key={i}
+            className={`w-2 h-2 rounded-full transition-all duration-500 ${
+              i === activeIndex
+                ? "bg-blue-600 w-6"
+                : "bg-slate-300"
+            }`}
+          />
+        ))}
       </div>
     </section>
   );

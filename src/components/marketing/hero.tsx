@@ -1,9 +1,15 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PLATFORMS } from "@/types/database";
-import { motion } from "framer-motion";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import {
   Facebook,
   Instagram,
@@ -23,37 +29,64 @@ const iconMap = {
   MapPin: MapPin,
 };
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.3,
-    },
-  },
-};
+function PlatformBlock({
+  platform,
+  index,
+  scrollProgress,
+}: {
+  platform: (typeof PLATFORMS)[number];
+  index: number;
+  scrollProgress: MotionValue<number>;
+}) {
+  const IconComponent = iconMap[platform.icon as keyof typeof iconMap];
+  const start = 0.02 + index * 0.03;
+  const end = 0.05 + index * 0.03;
 
-const blockVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring" as const, stiffness: 300, damping: 24 },
-  },
-};
+  const blockOpacity = useTransform(scrollProgress, [start, end], [0, 1]);
+  const blockY = useTransform(scrollProgress, [start, end], [20, 0]);
+
+  return (
+    <motion.div
+      style={{ opacity: blockOpacity, y: blockY }}
+      className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all cursor-default"
+    >
+      <IconComponent
+        className="w-5 h-5 flex-shrink-0"
+        style={{ color: platform.color }}
+      />
+      <span className="text-sm font-medium text-slate-700">
+        {platform.label}
+      </span>
+    </motion.div>
+  );
+}
 
 export function Hero() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  const headlineY = useTransform(scrollYProgress, [0, 1], [0, -60]);
+  const headlineOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const subtextY = useTransform(scrollYProgress, [0, 1], [0, -40]);
+  const subtextOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
+  const ctaY = useTransform(scrollYProgress, [0, 1], [0, -20]);
+  const ctaOpacity = useTransform(scrollYProgress, [0, 0.35], [1, 0]);
+
   return (
-    <section className="relative w-full overflow-hidden bg-white pt-32 pb-24 sm:pt-40 sm:pb-32">
+    <section
+      ref={sectionRef}
+      className="relative w-full overflow-hidden bg-white pt-32 pb-24 sm:pt-40 sm:pb-32"
+    >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-white to-white" />
 
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            style={{ y: headlineY, opacity: headlineOpacity }}
             className="text-4xl sm:text-5xl lg:text-7xl font-bold text-slate-900 mb-6 leading-[1.1] tracking-tight"
           >
             Your superhuman
@@ -64,9 +97,7 @@ export function Hero() {
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+            style={{ y: subtextY, opacity: subtextOpacity }}
             className="text-lg sm:text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed"
           >
             Built for anyone managing social media. Connect your accounts, say
@@ -74,9 +105,7 @@ export function Hero() {
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25, ease: "easeOut" }}
+            style={{ y: ctaY, opacity: ctaOpacity }}
             className="mb-16"
           >
             <Link href="/signup">
@@ -90,32 +119,16 @@ export function Hero() {
             </Link>
           </motion.div>
 
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="flex flex-wrap justify-center gap-3 sm:gap-4"
-          >
-            {PLATFORMS.map((platform) => {
-              const IconComponent =
-                iconMap[platform.icon as keyof typeof iconMap];
-              return (
-                <motion.div
-                  key={platform.id}
-                  variants={blockVariants}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-slate-300 transition-all cursor-default"
-                >
-                  <IconComponent
-                    className="w-5 h-5 flex-shrink-0"
-                    style={{ color: platform.color }}
-                  />
-                  <span className="text-sm font-medium text-slate-700">
-                    {platform.label}
-                  </span>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+            {PLATFORMS.map((platform, index) => (
+              <PlatformBlock
+                key={platform.id}
+                platform={platform}
+                index={index}
+                scrollProgress={scrollYProgress}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
