@@ -132,10 +132,16 @@ export default function ConnectionCallbackPage() {
       
       setSuccess(true);
       
-      // Redirect to brand settings after a short delay
-      setTimeout(() => {
-        router.push(`/brands?connected=facebook`);
-      }, 2000);
+      // Close popup and notify parent window
+      if (window.opener) {
+        window.opener.postMessage({ type: "CONNECTION_SUCCESS", platform: "facebook" }, "*");
+        setTimeout(() => window.close(), 1500);
+      } else {
+        // Not in popup, redirect normally
+        setTimeout(() => {
+          router.push(`/brands?connected=facebook`);
+        }, 2000);
+      }
     } catch (err) {
       console.error("Error selecting page:", err);
       setError(err instanceof Error ? err.message : "Failed to connect Facebook page");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader, Check, Plus, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,19 @@ export function ConnectPlatform({
   const [loading, setLoading] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  // Listen for messages from OAuth popup
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "CONNECTION_SUCCESS") {
+        setLoading(null);
+        onConnect?.();
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [onConnect]);
 
   const connectedPlatforms = new Set(
     connectedAccounts.map((acc) => acc.platform)
