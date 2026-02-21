@@ -260,18 +260,6 @@ export function AgentShowcase() {
         </motion.div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
-        {agents.map((_, i) => (
-          <div
-            key={i}
-            className={`w-2 h-2 rounded-full transition-all duration-500 ${
-              i === activeIndex
-                ? "bg-blue-600 w-6"
-                : "bg-slate-300"
-            }`}
-          />
-        ))}
-      </div>
     </section>
   );
 }
