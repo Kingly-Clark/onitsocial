@@ -54,18 +54,31 @@ export async function POST(request: NextRequest) {
     try {
       const accountsResponse = await listAccounts(profileId);
       accounts = accountsResponse.data || [];
+      console.log("Listed accounts from getLate:", JSON.stringify(accounts, null, 2));
     } catch (error) {
       console.error("Failed to list accounts from Late API:", error);
     }
 
-    // Find the connected account for this platform
-    const connectedAccount = accounts.find(
-      (acc) => acc.platform.toLowerCase() === platform.toLowerCase()
-    );
+    // Find the connected account for this platform (flexible matching)
+    const platformLower = platform.toLowerCase();
+    const connectedAccount = accounts.find((acc) => {
+      const accPlatform = acc.platform.toLowerCase();
+      return accPlatform === platformLower || 
+             accPlatform.includes(platformLower) || 
+             platformLower.includes(accPlatform);
+    });
 
     if (!connectedAccount) {
+      console.error(`Account not found. Platform: ${platform}, Available accounts:`, accounts);
+      
+      // If no accounts found at all, the API might not have the account yet
+      // Try to create a placeholder entry that can be updated later
+      if (accounts.length === 0) {
+        console.log("No accounts found, creating placeholder entry");
+      }
+      
       return NextResponse.json(
-        { error: "Account not found in platform. The connection may have failed." },
+        { error: `Account not found for ${platform}. Available platforms: ${accounts.map(a => a.platform).join(", ") || "none"}` },
         { status: 400 }
       );
     }

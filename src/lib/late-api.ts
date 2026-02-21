@@ -97,10 +97,27 @@ export async function getConnectUrl(platform: string, profileId: string, redirec
 // ─── Accounts ───────────────────────────────────────────────────────────────
 
 export async function listAccounts(profileId: string) {
-  return lateRequest<{ data: Array<{ id: string; platform: string; username: string; avatarUrl: string }> }>(
+  const response = await lateRequest<{ 
+    data?: Array<{ id: string; platform: string; username: string; avatarUrl: string }>;
+    accounts?: Array<{ _id: string; platform: string; username?: string; avatarUrl?: string; name?: string }>;
+  }>(
     "/accounts",
     { params: { profileId } }
   );
+  
+  // Handle different response formats
+  if (response.accounts) {
+    return {
+      data: response.accounts.map(acc => ({
+        id: acc._id || (acc as any).id,
+        platform: acc.platform,
+        username: acc.username || acc.name || "",
+        avatarUrl: acc.avatarUrl || "",
+      }))
+    };
+  }
+  
+  return { data: response.data || [] };
 }
 
 export async function deleteAccount(accountId: string) {
